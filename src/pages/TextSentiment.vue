@@ -2,7 +2,7 @@
   <el-container class="my-page">
     <!-- 第一部分：文字的情感分析 -->
     <el-card class="my-card">
-      <div slot="header" class="text-h6">文字的情感分析</div>
+      <div slot="header" class="text-h6">评论的情感分析</div>
       <el-form>
         <el-form-item label="输入句子">
           <el-input type="textarea" v-model="sentimentInput"></el-input>
@@ -56,14 +56,43 @@ export default {
       fileProgress: null, // 文件上传进度
       fileUploaded: false, // 文件是否已上传
       wordCloudUrls: [], // 词云图的 URL 数组
-      loading: false // 加载状态
+      loading: false, // 加载状态
+      experimentUrl: null // 实验URL
     }
   },
   methods: {
-    analyzeSentiment() {
+    async getExperimentUrl() {
+      const courseId = localStorage.getItem('course_id')
+      const userId = localStorage.getItem('user_id')
+      try {
+        const response = await axios.post('/student/get_exp_url', {
+          course_id: courseId,
+          user_id: userId
+        })
+        if (response.data.errno === 10000) {
+          this.experimentUrl = response.data.data.experiment_url
+          return true
+        } else {
+          this.$message.error(response.data.msg)
+          return false
+        }
+      } catch (error) {
+        this.$message.error('实验 URL 查找失败')
+        return false
+      }
+    },
+    async analyzeSentiment() {
       const sentences = this.sentimentInput.split(';')
+
+      const urlFound = await this.getExperimentUrl()
+      if (!urlFound) {
+        return
+      }
+
+      const apiUrl = this.experimentUrl
+
       if (sentences.length === 1) {
-        axios.post('http://127.0.0.1:8000/api/text_classification/single_comment/', {
+        axios.post(`${apiUrl}/api/text_classification/single_comment/`, {
           text: this.sentimentInput
         })
             .then((response) => {
@@ -74,7 +103,7 @@ export default {
               console.error('Error analyzing sentiment:', error)
             })
       } else {
-        axios.post('http://127.0.0.1:8000/api/text_classification/multiple_comments/', {
+        axios.post(`${apiUrl}/api/text_classification/multiple_comments/`, {
           text_list: sentences
         })
             .then((response) => {
@@ -109,9 +138,14 @@ export default {
       this.$refs.fileInput.value = ''
       console.log('File deleted')
     },
-    generateWordCloud() {
+    async generateWordCloud() {
       if (!this.file) {
         this.$message.error('请先上传一个文件')
+        return
+      }
+
+      const urlFound = await this.getExperimentUrl()
+      if (!urlFound) {
         return
       }
 
@@ -121,7 +155,7 @@ export default {
         const content = e.target.result
         const sentences = content.split('\n').filter((line) => line.trim())
 
-        axios.post('http://127.0.0.1:8000/api/text_classification/multiple_comments/', {
+        axios.post(`${this.experimentUrl}/api/text_classification/multiple_comments/`, {
           text_list: sentences
         })
             .then((response) => {
@@ -145,7 +179,6 @@ export default {
 </script>
 
 <style scoped>
-
 .my-page {
   display: flex;
   justify-content: center;
@@ -174,5 +207,4 @@ export default {
   max-width: 100%;
   height: auto;
 }
-
 </style>

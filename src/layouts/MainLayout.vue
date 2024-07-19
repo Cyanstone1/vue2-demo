@@ -2,22 +2,19 @@
   <div id="app">
     <el-container>
       <!-- 配置头部 -->
-      <el-header>
-        <el-row type="flex"  align="middle">
+      <el-header class="header">
+        <el-row type="flex" justify="space-between" align="middle">
           <el-col>
             <!-- 配置按钮，点击按钮时触发 toggleLeftDrawer 方法 -->
             <el-button icon="el-icon-menu" @click="toggleLeftDrawer"></el-button>
-            <span>人工智能培训平台</span>
-          </el-col>
-          <el-col>
-            <div>Element UI v{{ version }}</div>
+            <span>人工智能培训实验</span>
           </el-col>
         </el-row>
       </el-header>
 
       <!-- 配置抽屉 -->
       <el-container>
-        <el-aside width="200px" v-if="leftDrawerOpen">
+        <el-aside width="200px" v-show="leftDrawerOpen">
           <el-menu default-active="1">
             <el-menu-item index="1" @click="goTo('system-introduction')">
               <i class="el-icon-info"></i>
@@ -25,11 +22,11 @@
             </el-menu-item>
             <el-menu-item index="2" @click="goTo('text-similarity')">
               <i class="el-icon-data-analysis"></i>
-              <span slot="title">文本相似度</span>
+              <span slot="title">语意相似度</span>
             </el-menu-item>
             <el-menu-item index="3" @click="goTo('text-sentiment')">
               <i class="el-icon-message"></i>
-              <span slot="title">文字情感分析</span>
+              <span slot="title">评论情感分析</span>
             </el-menu-item>
           </el-menu>
         </el-aside>
@@ -48,8 +45,7 @@ export default {
   name: 'MainLayout',
   data() {
     return {
-      leftDrawerOpen: false,
-      version: '2.15.6' // Element UI 的版本，你可以动态获取
+      leftDrawerOpen: false
     }
   },
   methods: {
@@ -57,21 +53,29 @@ export default {
       this.leftDrawerOpen = !this.leftDrawerOpen
     },
     goTo(page) {
-      this.$router.push(`/${page}`)
+      if (this.$route.path !== `/${page}`) {
+        this.$router.push(`/${page}`)
+      }
     }
   }
 }
 </script>
 
 <style scoped>
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
 
-
-.el-header {
+.header {
   background-color: #409EFF;
   color: white;
   padding: 0 20px;
   display: flex;
   align-items: center;
+  height: 60px; /* 设置固定高度 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
 }
 
 .el-aside {
@@ -80,5 +84,7 @@ export default {
 
 .el-main {
   padding: 20px;
+  overflow: auto; /* 确保内容溢出时出现滚动条 */
+  height: calc(100vh - 60px); /* 减去头部的高度 */
 }
 </style>

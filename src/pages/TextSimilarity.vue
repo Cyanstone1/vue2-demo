@@ -2,7 +2,7 @@
   <el-container class="my-page">
     <!-- 第一个卡片，用于文本相似度计算 -->
     <el-card class="my-card">
-      <div slot="header" class="text-h6">文本相似度计算</div>
+      <div slot="header" class="text-h6">语意相似度计算</div>
       <!-- 输入两个文本框，用于输入待比较的文本 -->
       <el-form>
         <el-form-item label="输入文本1">
@@ -24,7 +24,7 @@
 
     <!-- 第二个卡片，用于文件相似度计算 -->
     <el-card class="my-card">
-      <div slot="header" class="text-h6">文件相似度计算</div>
+      <div slot="header" class="text-h6">语意文件相似度计算</div>
       <!-- 文件上传部分 -->
       <div class="vertical-container">
         <!-- 文件1上传按钮 -->
@@ -58,7 +58,7 @@
       <!-- 显示文件相似度结果 -->
       <div v-if="fileSimilarityResult !== null">
         <el-progress :percentage="fileSimilarityResult * 100" :text-inside="true"></el-progress>
-        <div class="text-subtitle2">文件相似度：{{ (fileSimilarityResult * 100).toFixed(2) }}%</div>
+        <div class="text-subtitle2">文件语意相似度：{{ (fileSimilarityResult * 100).toFixed(2) }}%</div>
       </div>
     </el-card>
   </el-container>
@@ -79,17 +79,44 @@ export default {
       file2: null, // 用户上传的第二个文件
       file1Uploaded: false, // 第一个文件是否已上传的标志
       file2Uploaded: false, // 第二个文件是否已上传的标志
-      fileSimilarityResult: null // 用于存储文件相似度计算结果
+      fileSimilarityResult: null, // 用于存储文件相似度计算结果
+      experimentUrl: null // 实验URL
     }
   },
   methods: {
+    async getExperimentUrl() {
+      const courseId = localStorage.getItem('course_id')
+      const userId = localStorage.getItem('user_id')
+      try {
+        const response = await axios.post('/student/get_exp_url', {
+          course_id: courseId,
+          user_id: userId
+        })
+        if (response.data.errno === 10000) {
+          this.experimentUrl = response.data.data.experiment_url
+          return true
+        } else {
+          this.$message.error(response.data.msg)
+          return false
+        }
+      } catch (error) {
+        this.$message.error('实验 URL 查找失败')
+        return false
+      }
+    },
     async calculateTextSimilarity() {
       if (!this.text1 || !this.text2) {
         this.$message.error('请填写两个文本')
         return
       }
+
+      const urlFound = await this.getExperimentUrl()
+      if (!urlFound) {
+        return
+      }
+
       try {
-        const response = await axios.post('http://127.0.0.1:8000/api/text_comparison/text/', {
+        const response = await axios.post(`${this.experimentUrl}/api/text_comparison/text/`, {
           sentence1: this.text1,
           sentence2: this.text2
         })
@@ -127,8 +154,13 @@ export default {
       const file1Text = await this.readFileContent(this.file1)
       const file2Text = await this.readFileContent(this.file2)
 
+      const urlFound = await this.getExperimentUrl()
+      if (!urlFound) {
+        return
+      }
+
       try {
-        const response = await axios.post('http://127.0.0.1:8000/api/text_comparison/file/', {
+        const response = await axios.post(`${this.experimentUrl}/api/text_comparison/file/`, {
           file1: file1Text,
           file2: file2Text
         })

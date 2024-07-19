@@ -15,6 +15,7 @@ const routes = [
         path: '/',
         component: MainLayout,
         children: [
+            { path: '',redirect: 'system-introduction', component: SystemIntroduction }, // 系统介绍页面
             { path: 'system-introduction', component: SystemIntroduction }, // 系统介绍页面
             { path: 'text-similarity', component: TextSimilarity }, // 文本相似度计算页面
             { path: 'text-sentiment', component: TextSentiment } // 文字情感分析页面
