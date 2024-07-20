@@ -87,10 +87,14 @@ export default {
     async getExperimentUrl() {
       const courseId = localStorage.getItem('course_id')
       const userId = localStorage.getItem('user_id')
+      const formData = new FormData()
+      formData.append('course_id',courseId)
+      formData.append('user_id',userId)
       try {
-        const response = await axios.post('/student/get_exp_url', {
-          course_id: courseId,
-          user_id: userId
+        const response = await axios.post('/student/get_exp_url', formData,{
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
         })
         if (response.data.errno === 10000) {
           this.experimentUrl = response.data.data.experiment_url
@@ -116,9 +120,13 @@ export default {
       }
 
       try {
-        const response = await axios.post(`${this.experimentUrl}/api/text_comparison/text/`, {
-          sentence1: this.text1,
-          sentence2: this.text2
+        const formData = new FormData()
+        formData.append('sentence1',this.text1)
+        formData.append('sentence2',this.text2)
+        const response = await axios.post(`http://${this.experimentUrl}/api/text_comparison/text/`, formData,{
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
         })
         this.textSimilarityResult = parseFloat(response.data.result)
       } catch (error) {
@@ -160,9 +168,13 @@ export default {
       }
 
       try {
-        const response = await axios.post(`${this.experimentUrl}/api/text_comparison/file/`, {
-          file1: file1Text,
-          file2: file2Text
+        const formData = new FormData()
+        formData.append('file1',file1Text)
+        formData.append('file2',file2Text)
+        const response = await axios.post(`http://${this.experimentUrl}/api/text_comparison/file/`, formData,{
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
         })
         this.fileSimilarityResult = parseFloat(response.data.result)
       } catch (error) {
@@ -185,6 +197,7 @@ export default {
 .my-page {
   display: flex;
   justify-content: center;
+  flex-direction: column;
   align-items: center;
   padding: 20px;
 }

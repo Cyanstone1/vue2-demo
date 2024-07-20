@@ -2,9 +2,9 @@
   <el-container class="my-page">
     <!-- 第一部分：文字的情感分析 -->
     <el-card class="my-card">
-      <div slot="header" class="text-h6">评论的情感分析</div>
+      <div slot="header" class="text-h6">评论情感分析</div>
       <el-form>
-        <el-form-item label="输入句子">
+        <el-form-item label="输入评论">
           <el-input type="textarea" v-model="sentimentInput"></el-input>
         </el-form-item>
         <el-form-item>
@@ -12,7 +12,7 @@
         </el-form-item>
       </el-form>
       <div v-if="sentimentResult">
-        <div class="text-subtitle2">情感结果：{{ sentimentResult }}</div>
+        <div class="text-subtitle2">分析结果：{{ sentimentResult }}</div>
       </div>
     </el-card>
 
@@ -31,12 +31,13 @@
           <span>{{ file.name }}</span>
           <el-button type="danger" icon="el-icon-delete" @click="deleteFile"></el-button>
         </div>
-        <el-button type="primary" @click="generateWordCloud" :disabled="!fileUploaded">生成词云图</el-button>
-        <el-progress v-if="loading" type="circle" :percentage="100" status="exception" />
+        <el-button type="primary" @click="generateWordCloud" :disabled="true">生成词云图</el-button>
+        <!--        <el-button type="primary" @click="generateWordCloud" :disabled="!fileUploaded">生成词云图</el-button>-->
+        <el-progress v-if="loading" type="circle" :percentage="100" status="exception"/>
       </div>
       <div v-if="wordCloudUrls.length" class="q-gutter-md">
         <div v-for="(url, index) in wordCloudUrls" :key="index" class="word-cloud-container">
-          <img :src="url" alt="词云图" class="word-cloud-image" />
+          <img :src="url" alt="词云图" class="word-cloud-image"/>
         </div>
       </div>
     </el-card>
@@ -64,10 +65,18 @@ export default {
     async getExperimentUrl() {
       const courseId = localStorage.getItem('course_id')
       const userId = localStorage.getItem('user_id')
+
+      // 创建一个 FormData 对象
+      const formData = new FormData()
+      formData.append('course_id', courseId)
+      formData.append('user_id', userId)
+
       try {
-        const response = await axios.post('/student/get_exp_url', {
-          course_id: courseId,
-          user_id: userId
+        // 使用 FormData 对象作为请求体
+        const response = await axios.post('/student/get_exp_url', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
         })
         if (response.data.errno === 10000) {
           this.experimentUrl = response.data.data.experiment_url
@@ -90,10 +99,12 @@ export default {
       }
 
       const apiUrl = this.experimentUrl
+      const formData = new FormData()
 
       if (sentences.length === 1) {
-        axios.post(`${apiUrl}/api/text_classification/single_comment/`, {
-          text: this.sentimentInput
+        formData.append('text',this.sentimentInput)
+        axios.post(`http://${apiUrl}/api/text_classification/single_comment/`, formData,{
+          headers: {'Content-Type' : 'multipart/form-data'}
         })
             .then((response) => {
               console.log('API response:', response.data)
@@ -103,8 +114,10 @@ export default {
               console.error('Error analyzing sentiment:', error)
             })
       } else {
-        axios.post(`${apiUrl}/api/text_classification/multiple_comments/`, {
-          text_list: sentences
+        const formData = new formData()
+        formData.append('text_list',sentences)
+        axios.post(`http://${apiUrl}/api/text_classification/multiple_comments/`, formData,{
+          headers:{'Content-Type':'multipart/form-data'}
         })
             .then((response) => {
               console.log('API response:', response.data)
@@ -154,9 +167,11 @@ export default {
       reader.onload = (e) => {
         const content = e.target.result
         const sentences = content.split('\n').filter((line) => line.trim())
+        const formData = new FormData()
+        formData.append('text_list',sentences)
 
-        axios.post(`${this.experimentUrl}/api/text_classification/multiple_comments/`, {
-          text_list: sentences
+        axios.post(`http://${this.experimentUrl}/api/text_classification/multiple_comments/`,formData, {
+          headers: {'Content-Type':'multipart/form-data'}
         })
             .then((response) => {
               console.log('API response:', response.data)
@@ -182,6 +197,7 @@ export default {
 .my-page {
   display: flex;
   justify-content: center;
+  flex-direction: column;
   align-items: center;
   padding: 20px;
 }
